@@ -19,12 +19,21 @@ pipeline {
         sh 'cd spring-boot-app && mvn clean package'
       }
     }
+    stage('Static Code Analysis') {
+      environment {
+        SONAR_URL = "http://20.90.208.84:9000"
+      }
+      steps {
+        withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_AUTH_TOKEN')]) {
+          sh 'cd spring-boot-app && mvn sonar:sonar -Dsonar.login=$SONAR_AUTH_TOKEN -Dsonar.host.url=${SONAR_URL}'
+        }
+      }
     }
     stage('Build and Push Docker Image') {
       environment {
         DOCKER_IMAGE = "ultimate-cicd:${BUILD_NUMBER}"
         // DOCKERFILE_LOCATION = "spring-boot-app/Dockerfile"
-        REGISTRY_CREDENTIALS = credentials('docker-cred')
+        REGISTRY_CREDENTIALS = credentials('1008b0f9-a1af-4390-a199-5f2f19897f5d')
       }
       steps {
         script {
@@ -38,7 +47,7 @@ pipeline {
     }
     stage('Update Deployment File') {
         environment {
-            GIT_REPO_NAME = "jenkins-CICD"
+            GIT_REPO_NAME = "jencicd"
             GIT_USER_NAME = "daluchiudechukwu"
         }
         steps {
@@ -50,7 +59,7 @@ pipeline {
                     sed -i "s/replaceImageTag/${BUILD_NUMBER}/g" spring-boot-app-manifests/deployment.yml
                     git add spring-boot-app-manifests/deployment.yml
                     git commit -m "Update deployment image to version ${BUILD_NUMBER}"
-                    git push https://github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
+                    git push https://${GITHUB_TOKEN}@github.com/${GIT_USER_NAME}/${GIT_REPO_NAME} HEAD:main
                 '''
             }
         }
