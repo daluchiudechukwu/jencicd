@@ -10,6 +10,7 @@ pipeline {
       steps {
         sh 'echo passed'
         //git branch: 'main', url: ''
+        fuser -k -TERM spring-boot-app/target/ || true
       }
     }
     stage('Build and Test') {
